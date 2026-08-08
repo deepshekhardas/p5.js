@@ -4,7 +4,12 @@
  * @for p5
  */
 export function isCode(input) {
-  const leftRightKeys = ['Alt', 'Shift', 'Control', 'Meta'];
+  const leftRightKeys = [
+    'Alt',
+    'Shift',
+    'Control',
+    'Meta'
+  ];
   if (leftRightKeys.includes(input)) {
     return false;
   }
@@ -14,11 +19,16 @@ export function isCode(input) {
   return input.length > 1;
 }
 
-function keyboard(p5, fn, lifecycles) {
-  lifecycles.presetup = function () {
-    const events = ['keydown', 'keyup', 'keypress', 'blur'];
+function keyboard(p5, fn, lifecycles){
+  lifecycles.presetup = function(){
+    const events = [
+      'keydown',
+      'keyup',
+      'keypress',
+      'blur'
+    ];
 
-    for (const event of events) {
+    for(const event of events){
       window.addEventListener(event, this[`_on${event}`].bind(this), {
         passive: false,
         signal: this._removeSignal
@@ -603,7 +613,7 @@ function keyboard(p5, fn, lifecycles) {
    *   // return false;
    * }
    */
-  fn._onkeydown = function (e) {
+  fn._onkeydown = function(e) {
     if (this._downKeys[e.code]) {
       return;
     }
@@ -769,16 +779,19 @@ function keyboard(p5, fn, lifecycles) {
    *   // return false;
    * }
    */
-  fn._onkeyup = function (e) {
+  fn._onkeyup = function(e) {
+    this.key = e.key;
+    this.code = e.code;
+
+    delete this._downKeyCodes[e.code];
+    delete this._downKeys[e.key];
+
     if (typeof this._customActions.keyReleased === 'function') {
       const executeDefault = this._customActions.keyReleased(e);
       if (executeDefault === false) {
         e.preventDefault();
       }
     }
-
-    delete this._downKeyCodes[e.code];
-    delete this._downKeys[e.key];
 
     if (!this._areDownKeys()) {
       this.keyIsPressed = false;
@@ -916,7 +929,7 @@ function keyboard(p5, fn, lifecycles) {
    *   // return false;
    * }
    */
-  fn._onkeypress = function (e) {
+  fn._onkeypress = function(e) {
     if (e.which === this._lastKeyCodeTyped && e.repeat) {
       // prevent multiple firings
       return;
@@ -938,7 +951,7 @@ function keyboard(p5, fn, lifecycles) {
    * not focused on the element we must assume all keys currently down have
    * been released.
    */
-  fn._onblur = function (e) {
+  fn._onblur = function(e) {
     this._downKeys = {};
   };
 
@@ -1052,7 +1065,7 @@ function keyboard(p5, fn, lifecycles) {
    *   circle(x, y, 5);
    * }
    */
-  fn.keyIsDown = function (input) {
+  fn.keyIsDown = function(input) {
     if (isCode(input)) {
       return this._downKeyCodes[input] || this._downKeys[input] || false;
     } else {
@@ -1069,7 +1082,7 @@ function keyboard(p5, fn, lifecycles) {
    * keyIsPressed property to true.
    * @private
    */
-  fn._areDownKeys = function () {
+  fn._areDownKeys = function() {
     for (const key in this._downKeys) {
       if (this._downKeys.hasOwnProperty(key) && this._downKeys[key] === true) {
         return true;
@@ -1081,6 +1094,6 @@ function keyboard(p5, fn, lifecycles) {
 
 export default keyboard;
 
-if (typeof p5 !== 'undefined') {
+if(typeof p5 !== 'undefined'){
   keyboard(p5, p5.prototype);
 }
