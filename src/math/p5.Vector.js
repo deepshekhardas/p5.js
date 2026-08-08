@@ -13,7 +13,7 @@ const prioritizeSmallerDimension = function (currentVectorDimension, args) {
   const resultDimension = Math.min(currentVectorDimension, args.length);
   if (Array.isArray(args) && currentVectorDimension !== args.length) {
     console.warn(
-      'When working with two vectors of different sizes, the smaller dimension is used. In this operation, both vector will be treated as ' + resultDimension + 'D vectors, and any additional values of the linger vector will be ignored.'
+      'When working with two vectors of different sizes, the smaller dimension is used. In this operation, both vectors will be treated as ' + resultDimension + 'D vectors, and any additional values of the longer vector will be ignored.'
     );
   }
   return resultDimension;
@@ -1930,6 +1930,15 @@ class Vector {
    * }
    */
   heading() {
+    if (this.dimensions < 2 || (
+      this._values instanceof Array && this._values.slice(2).some(v => v !== 0))
+    ) {
+      p5._friendlyError(
+        'p5.Vector.heading() only supports 2D vectors (z === 0). ' +
+        'Use angleBetween() for vectors with nonzero z components.'
+      );
+      return 0;
+    }
     const h = Math.atan2(this.y, this.x);
     if (this.isPInst) return this._fromRadians(h);
     return h;
@@ -2302,11 +2311,14 @@ class Vector {
     if (magSqMult === 0) {
       return NaN;
     }
-    const u = this.cross(v);
-    // The dot product computes the cos value, and the cross product computes
-    // the sin value. Find the angle based on them. In addition, in the case of
-    // 2D vectors, a sign is added according to the direction of the vector.
-    let angle = Math.atan2(u.mag(), this.dot(v)) * Math.sign(u.z || 1);
+    let angle = Math.acos(
+      Math.max(-1, Math.min(1, this.dot(v) / Math.sqrt(magSqMult)))
+    );
+    // For 2D vectors, preserve the original sign behavior using cross product z-component
+    if (this.numDimensions === 2 || (this.z === 0 && v.z === 0)) {
+      const cross = this.cross(v);
+      angle *= Math.sign(cross.z || 1);
+    }
     if (this.isPInst) {
       angle = this._fromRadians(angle);
     }
@@ -2572,59 +2584,29 @@ class Vector {
     const magmag = selfMag * vMag;
     // if either is a zero vector, linearly interpolate by these vectors
     if (magmag === 0) {
-      this.mult(1 - amt).add(v.x * amt, v.y * amt, v.z * amt);
+      this.mult(1 - amt).add(v.clone().mult(amt));
       return this;
     }
-    // the cross product of 'this' and 'v' is the axis of rotation
-    const axis = this.cross(v);
-    const axisMag = axis.mag();
-    // Calculates the angle between 'this' and 'v'
-    const theta = Math.atan2(axisMag, this.dot(v));
 
-    // However, if the norm of axis is 0, normalization cannot be performed,
-    // so we will divide the cases
-    if (axisMag > 0) {
-      axis.x /= axisMag;
-      axis.y /= axisMag;
-      axis.z /= axisMag;
-    } else if (theta < Math.PI * 0.5) {
-      // if the norm is 0 and the angle is less than PI/2,
-      // the angle is very close to 0, so do linear interpolation.
-      this.mult(1 - amt).add(v.x * amt, v.y * amt, v.z * amt);
+    const r0 = this.copy().normalize();
+    const r1 = v.copy().normalize();
+    let omega = Math.acos(Math.max(-1, Math.min(1, r0.dot(r1))));
+    const m = selfMag + (vMag - selfMag) * amt;
+
+    if (omega === 0) {
+      this.mult(1 - amt).add(v.clone().mult(amt));
       return this;
-    } else {
-      // If the norm is 0 and the angle is more than PI/2, the angle is
-      // very close to PI.
-      // In this case v can be regarded as '-this', so take any vector
-      // that is orthogonal to 'this' and use that as the axis.
-      if (this.z === 0 && v.z === 0) {
-        // if both this and v are 2D vectors, use (0,0,1)
-        // this makes the result also a 2D vector.
-        axis.set(0, 0, 1);
-      } else if (this.x !== 0) {
-        // if the x components is not 0, use (y, -x, 0)
-        axis.set(this.y, -this.x, 0).normalize();
-      } else {
-        // if the x components is 0, use (1,0,0)
-        axis.set(1, 0, 0);
-      }
     }
 
-    // Since 'axis' is a unit vector, ey is a vector of the same length as 'this'.
-    const ey = axis.cross(this);
-    // interpolate the length with 'this' and 'v'.
-    const lerpedMagFactor = 1 - amt + (amt * vMag) / selfMag;
-    // imagine a situation where 'axis', 'this', and 'ey' are pointing
-    // along the z, x, and y axes, respectively.
-    // rotates 'this' around 'axis' by amt * theta towards 'ey'.
-    const cosMultiplier = lerpedMagFactor * Math.cos(amt * theta);
-    const sinMultiplier = lerpedMagFactor * Math.sin(amt * theta);
-    // then, calculate 'result'.
-    this.x = this.x * cosMultiplier + ey.x * sinMultiplier;
-    this.y = this.y * cosMultiplier + ey.y * sinMultiplier;
-    this.z = this.z * cosMultiplier + ey.z * sinMultiplier;
+    const sinOmega = Math.sin(omega);
+    const a = Math.sin((1 - amt) * omega) / sinOmega;
+    const b = Math.sin(amt * omega) / sinOmega;
 
-    return this;
+    const arr0 = r0.array();
+    const arr1 = r1.array();
+    const result = arr0.map((val, i) => val * a + arr1[i] * b);
+    this.set(...result);
+    return this.mult(m);
   }
 
   /**
@@ -2757,8 +2739,10 @@ class Vector {
    * <a href="#/p5.Vector">p5.Vector</a> object.
    *
    * The version of `equals()` with multiple parameters interprets them as the
-   * components of another vector. Any missing parameters are assigned the value
-   * 0.
+   * components of another vector.
+   *
+   * If the two vectors have different lengths, a warning is logged and only
+   * the components up to the shorter length are compared.
    *
    * The static version of `equals()`, as in `p5.Vector.equals(v0, v1)`,
    * interprets both parameters as <a href="#/p5.Vector">p5.Vector</a> objects.
@@ -2826,8 +2810,10 @@ class Vector {
       values = args;
     }
 
-    for (let i = 0; i < this.values.length; i++) {
-      if (this.values[i] !== (values[i] || 0)) {
+    const minDimension = prioritizeSmallerDimension(this.values.length, values);
+
+    for (let i = 0; i < minDimension; i++) {
+      if (this.values[i] !== values[i]) {
         return false;
       }
     }
