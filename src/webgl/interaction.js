@@ -312,13 +312,13 @@ function interaction(p5, fn) {
         // quit zoom when you stop wheeling.
         this._renderer.executeZoom = false;
       }
-      if (this.mouseIsPressed) {
-        if (this.mouseButton.left) {
-          deltaTheta = (-sensitivityX * this.movedX) / scaleFactor;
-          deltaPhi = (sensitivityY * this.movedY) / scaleFactor;
-        } else if (this.mouseButton.right) {
-          moveDeltaX = this.movedX;
-          moveDeltaY = this.movedY * cam.yScale;
+      if (pInst.mouseIsPressed) {
+        if (pInst.mouseButton.left) {
+          deltaTheta = (-sensitivityX * pInst.movedX) / scaleFactor;
+          deltaPhi = (sensitivityY * pInst.movedY) / scaleFactor;
+        } else if (pInst.mouseButton.right) {
+          moveDeltaX = pInst.movedX;
+          moveDeltaY = pInst.movedY * cam.yScale;
         }
         // start rotate and move when mouse is pressed within the canvas.
         if (pointersInCanvas) this._renderer.executeRotateAndMove = true;
