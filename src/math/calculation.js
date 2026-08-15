@@ -980,6 +980,11 @@ function calculation(p5, fn) {
    * @param  {Number[]} nums numbers to compare.
    * @return {Number}
    */
+  /**
+   * @method max
+   * @param  {...Number} nums numbers to compare.
+   * @return {Number}
+   */
   fn.max = function (...args) {
     const findMax = arr => {
       let max = -Infinity;
@@ -1097,6 +1102,11 @@ function calculation(p5, fn) {
   /**
    * @method min
    * @param  {Number[]} nums numbers to compare.
+   * @return {Number}
+   */
+  /**
+   * @method min
+   * @param  {...Number} nums numbers to compare.
    * @return {Number}
    */
   fn.min = function (...args) {
