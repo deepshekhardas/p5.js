@@ -50,7 +50,7 @@ Learn more about [our community](https://p5js.org/community/) and read our commu
 
 If you have found a bug in the p5.js library or want to request new features, feel free to file an issue! See our [contributor guidelines](https://p5js.org/contribute/contributor_guidelines) for a full reference of our contribution process. A set of templates for reporting issues and requesting features are provided to assist you (and us!). Different parts of p5.js are in different repositories. You can open an issue on each of them through these links:
 
-[p5.js](https://github.com/processing/p5.js/issues) — [p5.js website](https://github.com/processing/p5.js-website/issues) —- [p5.js web editor](https://github.com/processing/p5.js-web-editor/issues)
+[p5.js](https://github.com/processing/p5.js/issues) — [p5.js website](https://github.com/processing/p5.js-website/issues) — [p5.js web editor](https://github.com/processing/p5.js-web-editor/issues)
 
 p5.js is maintained mostly by volunteers, so we thank you for your patience as we try to address your issues as soon as we can.
 
