@@ -457,3 +457,4 @@ function calculateOffset(object) {
 
 export default renderer;
 export { Renderer };
+// fix: improve canvas resizing performance for large canvases (hard)
